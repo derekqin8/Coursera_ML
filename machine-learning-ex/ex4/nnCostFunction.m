@@ -39,6 +39,20 @@ Theta2_grad = zeros(size(Theta2));
 %         cost function computation is correct by verifying the cost
 %         computed in ex4.m
 %
+
+X = [ones(m,1) X];
+hidden_layer = [ones(m,1) sigmoid(X*Theta1')];
+h = sigmoid(hidden_layer*Theta2');
+
+y_vectors = zeros(m,num_labels);
+for i=1:m
+    y_vectors(i,y(i))=1;
+end
+
+J = (1/m)*sum(-y_vectors.*log(h)-(1-y_vectors).*log(1-h),'all');
+
+J = J+(lambda/(2*m))*(sum(Theta1(:,2:end).^2,'all')+sum(Theta2(:,2:end).^2,'all'));
+
 % Part 2: Implement the backpropagation algorithm to compute the gradients
 %         Theta1_grad and Theta2_grad. You should return the partial derivatives of
 %         the cost function with respect to Theta1 and Theta2 in Theta1_grad and
@@ -53,7 +67,27 @@ Theta2_grad = zeros(size(Theta2));
 %         Hint: We recommend implementing backpropagation using a for-loop
 %               over the training examples if you are implementing it for the 
 %               first time.
-%
+
+for t=1:m
+    a1 = X(t,:); %1x401
+    z2 = a1 * Theta1'; %1x401 * 401x25
+    a2 = [1 sigmoid(z2)]; %1x26
+    z3 = a2*Theta2'; %1x26 * 26x10
+    a3 = sigmoid(z3); %1x10
+    y = y_vectors(t,:); %1x10
+    del3 = a3 - y; %1x10 - 1x10
+    
+    z2 = [1 z2]; %1x26
+    del2 = (del3*Theta2).*sigmoidGradient(z2); %(1x10 * 10x26) .* 1x26
+    
+    Theta2_grad = Theta2_grad + del3'*a2; %10x26 + (10x1 * 1x26)
+    Theta1_grad = Theta1_grad + del2(:,2:end)'*a1; %25x401 + (25x1 * 1x401)
+    
+end
+
+Theta2_grad = (1/m)*Theta2_grad;
+Theta1_grad = (1/m)*Theta1_grad;
+
 % Part 3: Implement regularization with the cost function and gradients.
 %
 %         Hint: You can implement this around the code for
@@ -62,23 +96,8 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Theta2_grad(:,2:end) = Theta2_grad(:,2:end) + (lambda/m)*Theta2(:,2:end);
+Theta1_grad(:,2:end) = Theta1_grad(:,2:end) + (lambda/m)*Theta1(:,2:end);
 
 % -------------------------------------------------------------
 
